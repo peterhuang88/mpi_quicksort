@@ -1,7 +1,7 @@
-CXX = g++ -fPIC
-
+# CXX = g++ -fPIC
+CXX = mpic++
 quicksort: quicksort.cpp quicksort.h
-	$(CXX) -g -pthread -o quicksort quicksort.cpp 
+	$(CXX) -g -o quicksort quicksort.cpp 
 
 .PHONY: clean
 clean:

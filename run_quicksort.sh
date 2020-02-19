@@ -1,0 +1,1 @@
+mpirun -npernode 1 --hostfile host_file4 ./quicksort
