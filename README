@@ -1,0 +1,6 @@
+To run this file, modify run_quicksort.sh
+
+You can change the number of processors that this runs on by modifying the number after
+-np <NUM_PROCESSORS>
+
+please note that NUM_PROCESSORS MUST ALWAYS BE SOME FORM OF 2^n (a power of 2), otherwise it will hang!
