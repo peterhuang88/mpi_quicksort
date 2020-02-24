@@ -17,6 +17,10 @@ void quicksort(int, int*, MPI_Comm, int);
 int find_split_point(int* arr, int size, float pivot);
 void merge_arrays(int* old_arr, int* recv_arr, int* new_arr, int old_num, int recv_num);
 
+int partition2(int*,int,int);
+void swap(int*, int*);
+void serialquicksort(int*, int, int);
+
 
 char processor_name[MPI_MAX_PROCESSOR_NAME];
 
@@ -31,7 +35,15 @@ int floatcmpfunc (const void * a, const void * b) {
 int main(int argc, char** argv) {
     int* arr;
     //int num_elements = 20;
-    int num_elements = 100000000;
+    // int num_elements = 100000000;
+
+    // uncomment the argc stuff and the num_elements below it to manually set your num_elements
+    if (argc != 2) {
+        printf("This program only takes one parameter - the number of elements\n");
+        return EXIT_FAILURE;
+    }
+    
+    int num_elements = atoi(argv[1]);
 
     MPI_Init(NULL, NULL);
     //printf("hello\n");
@@ -67,7 +79,10 @@ int main(int argc, char** argv) {
     // MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Comm comm;
     MPI_Comm_dup(MPI_COMM_WORLD, &comm);
-    printf("Hello world from processor %s, rank %d out of %d processors\n", processor_name, world_rank, world_size);
+    // printf("Hello world from processor %s, rank %d out of %d processors\n", processor_name, world_rank, world_size);
+    if (world_rank == 0) {
+        printf("Initializing quicksort arrays of size %d\n", num_elements);
+    }
 
     // divide big array into sub_arrays
     // calculate subdomain size and start for each processor
@@ -113,7 +128,11 @@ int main(int argc, char** argv) {
     #endif*/
     
     // if the rank == 0, then divide up the array
-    MPI_Scatterv(arr, sendcounts, displs, MPI_INT, sub_arr, subdomain_size, MPI_INT, 0, comm);
+    if (world_size > 1) {
+        MPI_Scatterv(arr, sendcounts, displs, MPI_INT, sub_arr, subdomain_size, MPI_INT, 0, comm);
+        qsort(sub_arr, subdomain_size, sizeof(int), cmpfunc);
+    }
+    
 
     #ifdef DEBUG
     printf("Printing for %s, rank %d\n", processor_name, world_rank);
@@ -122,9 +141,7 @@ int main(int argc, char** argv) {
     }
     printf("\n");
     #endif
-
-    // quicksort the sub_arr rq for max effectiveness
-    qsort(sub_arr, subdomain_size, sizeof(int), cmpfunc);
+    
 
     // quicksort(num_elements, arr, comm);
     struct timeval start, end;
@@ -132,9 +149,13 @@ int main(int argc, char** argv) {
         gettimeofday(&start, NULL);
         printf("starting quicksort\n");
     }
-
-    quicksort(subdomain_size, sub_arr, comm, 1);
-    MPI_Barrier(comm);
+    if (world_size > 1) {
+        quicksort(subdomain_size, sub_arr, comm, 1);
+        MPI_Barrier(comm);
+    } else {
+        printf("Serial Quicksort\n");
+        serialquicksort(arr,0, num_elements);
+    }
 
     if (world_rank == 0) {
         gettimeofday(&end, NULL); 
@@ -164,7 +185,7 @@ void quicksort(int subdomain_size, int* sub_arr, MPI_Comm comm, int depth) {
             printf("%d ", arr[i]);
         }
         printf("\n");*/
-        //qsort(sub_arr, subdomain_size, sizeof(int), cmpfunc);
+        // qsort(sub_arr, subdomain_size, sizeof(int), cmpfunc); uncomment if not using merge_arrays
         return;
     }
 
@@ -353,3 +374,33 @@ void merge_arrays(int* old_arr, int* recv_arr, int* new_arr, int old_num, int re
 
     return;
 }
+
+int partition2 (int* arr, int low, int high)  
+{  
+    int pivot = arr[high];
+    int i = (low - 1); 
+  
+    for (int j = low; j <= high - 1; j++) {  
+        if (arr[j] < pivot) {  
+            i++;
+            swap(&arr[i], &arr[j]);  
+        }  
+    }  
+    swap(&arr[i + 1], &arr[high]);  
+    return (i + 1);  
+}  
+
+void swap(int* a, int* b) {  
+    int t = *a;  
+    *a = *b;  
+    *b = t;  
+}  
+
+void serialquicksort(int* arr, int low, int high) {  
+    if (low < high) {  
+        int ind = partition2(arr, low, high);  
+
+        serialquicksort(arr, low, ind - 1);  
+        serialquicksort(arr, ind + 1, high);  
+    }  
+}  

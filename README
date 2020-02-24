@@ -4,3 +4,13 @@ You can change the number of processors that this runs on by modifying the numbe
 -np <NUM_PROCESSORS>
 
 please note that NUM_PROCESSORS MUST ALWAYS BE SOME FORM OF 2^n (a power of 2), otherwise it will hang!
+
+to run on x number of elements, use the following command:
+
+./run_quicksort.sh x
+
+where x is the number of elements you want to use. please note that the program will exit immediately if no
+number is provided
+
+one final note: for some reason, the program runtime for 16 processors and 100M elements has been fluctuating between
+5 seconds and 11 seconds. i don't know why. serial qsort has been pretty steady at ~50 seconds
